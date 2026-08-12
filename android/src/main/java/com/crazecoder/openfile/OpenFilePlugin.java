@@ -69,6 +69,9 @@ public class OpenFilePlugin implements MethodCallHandler
     private static final int RESULT_CODE = 0x12;
     private static final String TYPE_STRING_APK = "application/vnd.android.package-archive";
 
+    private boolean isSharedThroughFileProvider() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.N;
+    }
     private boolean hasPermission(String permission) {
         return ContextCompat.checkSelfPermission(activity, permission) == PermissionChecker.PERMISSION_GRANTED;
     }
@@ -85,7 +88,13 @@ public class OpenFilePlugin implements MethodCallHandler
             } else {
                 typeString = getFileType(filePath);
             }
-            if (pathRequiresPermission()) {
+            if (isSharedThroughFileProvider()) {
+                if (TYPE_STRING_APK.equals(typeString)) {
+                    openApkFile();
+                    return;
+                }
+                startActivity();
+            } else if (pathRequiresPermission()) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     if(!isFileAvailable()){
                         return;
